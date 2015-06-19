@@ -727,7 +727,7 @@ Will take any arrays that belong to the given property and insert those array va
 
 ### sum
 
-Returns the sum of the values in the data array. If a property is provided, sums on the value of the property.  Values must be numeric. 
+Returns the sum of the values in the data array. If a property is provided, sums on the value of the property.  Values must be numeric.  
 **Usage:** sum(&lt;property?>)
 
 	data = [
@@ -746,7 +746,7 @@ Returns the sum of the values in the data array. If a property is provided, sums
 
 ### mean
 
-Causes RQL to get angry.  Just kidding, y'all.  Returns the mean average of the values in the data array. If a property is provided, averages on the value of the property.  Values must be numeric. 
+Causes RQL to get angry.  Just kidding, y'all.  Returns the mean average of the values in the data array. If a property is provided, averages on the value of the property.  Values must be numeric.  
 **Usage:** mean(&lt;property?>)
 
 	data = [
@@ -765,7 +765,7 @@ Causes RQL to get angry.  Just kidding, y'all.  Returns the mean average of the 
 
 ### max
 
-Returns the maximum of the values in the data array. If a property is provided, returns the maximum value of the property.  Values must be numeric. 
+Returns the maximum of the values in the data array. If a property is provided, returns the maximum value of the property.  Values must be numeric.  
 **Usage:** max(&lt;property?>)
 
 	data = [
@@ -784,7 +784,7 @@ Returns the maximum of the values in the data array. If a property is provided, 
 	
 ### min
 
-Returns the minimum of the values in the data array. If a property is provided, returns the minimum value of the property.  Values must be numeric. 
+Returns the minimum of the values in the data array. If a property is provided, returns the minimum value of the property.  Values must be numeric.  
 **Usage:** min(&lt;property?>)
 
 	data = [
@@ -803,7 +803,7 @@ Returns the minimum of the values in the data array. If a property is provided, 
 
 ### count
 
-Returns the number of values in the data array. 
+Returns the number of values in the data array.  
 **Usage:** count()
 
 	data = [
@@ -820,7 +820,7 @@ Returns the number of values in the data array.
 
 ### first
 
-Returns the first value in the data array. 
+Returns the first value in the data array.  
 **Usage:** first()
 
 	data = [
@@ -834,7 +834,7 @@ Returns the first value in the data array.
 
 ### one
 
-Returns the first and only value in the data array. If array has more than one value, an error is thrown. 
+Returns the first and only value in the data array. If array has more than one value, an error is thrown.  
 **Usage:** one()
 
 	data = [
@@ -851,7 +851,7 @@ Returns the first and only value in the data array. If array has more than one v
 
 ### aggregate
 
-Returns the result of an aggregation on the dataset. Allows you to group by values, and apply aggregate functions on the data in those groups.  Takes an arbitrary list of properties and aggregate functions. Will return an array of objects for each grouping.  Each object will contain the specific values of the grouping, and the result of the aggregate functions for that grouping.  Function results are stored in properties with integer numbers as names, corresponding to the order the functions were supplied in the query. 
+Returns the result of an aggregation on the dataset. Allows you to group by values, and apply aggregate functions on the data in those groups.  Takes an arbitrary list of properties and aggregate functions. Will return an array of objects for each grouping.  Each object will contain the specific values of the grouping, and the result of the aggregate functions for that grouping.  Function results are stored in properties with integer numbers as names, corresponding to the order the functions were supplied in the query.  
 **Usage:** aggregate(&lt;property|function>,...)
 
 	data = [
