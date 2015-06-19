@@ -1,222 +1,916 @@
-[![Build Status](https://travis-ci.org/persvr/rql.svg?branch=master)](https://travis-ci.org/persvr/rql)
+This is an implementation of Resource Query Language (RQL) that does not use the DOJO AMD framework.  The implementation primarily focuses on the ability to apply an RQL query string against a JSON array.  
 
-Resource Query Language (RQL) is a query language designed for use in URIs with object
-style data structures. This project includes the RQL specification and
-provides a JavaScript implementation of query
-parsing and query execution implementation for JavaScript arrays. The JavaScript library
-supports AMD and NodeJS/CommonJS module format so it can be run in the browser or
-in the server. RQL can be thought as basically a set of
-nestable named operators which each have a set of arguments. RQL is designed to
-have an extremely simple, but extensible grammar that can be written in a URL friendly query string. A simple RQL
-query with a single operator that indicates a search for any resources with a property of
-"foo" that has value of 3 could be written:
+The original project (in AMD form) can be found at [github.com/kriszyp/rql](https://github.com/kriszyp/rql), along with some good documentation. It's some good stuff, check it out. 
+This [query engine sandbox](http://rql-engine.eu01.aws.af.cm/) is also useful for learning and testing with the original RQL engine.
 
-    eq(foo,3)
+# Using the Library
 
-RQL is a compatible superset of standard HTML form URL encoding. The following query
-is identical to the query (it is sugar for the query above):
+Add the script to your project.
 
-    foo=3
+	<script src="rql.min.js"></script>
 
-Such that this can be used in URIs like:
+The library adds three objects to the global namespace
 
-    http://example.org/data?foo=3
+	RqlArray
+	RqlQuery
+	RqlParser
+	
+For the most part, only RqlArray is needed (the other two classes support the internals of RqlArray, though you can use them for custom trickery).  
+A simple example that filters an array for objects whos age property is less than 40:
 
-# JavaScript Library
+	var ra = new RqlArray(),
+        data = [{name: "Danbo", age: 25}, {name: "Jimbo", age: 45}, {name: "Hambo", age: 31}],
+        query = "lt(age,40)",
+	    result;
+	result = ra.executeQuery(query, {}, data);
+	
+	//the contents of result would be  [{name: "Danbo", age: 25}, {name: "Hambo", age: 31}]
 
-Using the JavaScript library we can construct queries
-using chained operator calls in JavaScript. We could execute the query above like this:
+# Limitations
 
-    var Query = require("rql/query").Query;
-    var fooEq3Query = new Query().eq("foo",3);
+The conversion testing primarily focused on using string-based functional queries.    E.g.
 
-# RQL Rules
+	"and(eq(name,Jimbo),gt(age,24))"
 
-The RQL grammar is based around standard URI delimiters. The standard rules for
-encoding strings with URL encoding (%xx) are observed. RQL also supersets FIQL.
-Therefore we can write a query that finds resources with a "price" property below
-10 with a "lt" operator using FIQL syntax:
+URL type queries also seem to be working but have not been thoroughly tested.  There are issues with or and brackets, though these also exist in the original RQL library  E.g.
 
-    price=lt=10
+	"name=Jimbo&age=gt=24"
+	"(name=Jimbo&age>24)|(name=Hambo&age<43)"  //this query usually throws an error
 
-Which is identical (and sugar for call operator syntax known as the normalized form):
+Inline chained queries was not tested and is quite possibly broken due to the removal of the DOJO module code.  E.g.
 
-    lt(price,10)
+	var fooBetween3And10Query = new RqlQuery().lt("foo",3).gt("foo",10);
+	
 
-One can combine conditions with multiple operators with "&":
+String-based functional queries are what will be used by the RAMP project, and is recommended to anyone else using this implementaiton.  
+Of course, fixes to the other formats are always welcome via a pull request.
 
-    foo=3&price=lt=10
 
-Is the same as:
 
-    eq(foo,3)&lt(price,10)
+# Examples
 
-Which is also the same as:
+Here are some fun examples of how to apply query functions in RQL.  Examples will often be in the following format:
 
-    and(eq(foo,3),lt(price,10))
+	data = [<some objects>];
+	query = "<a query string>";
+	result = [<objects from data that satisfy the query>];   
 
-We can execute a query against a JavaScript array:
+The equality after the result variable is just for readability.  In actual code, the result would be set by calling the executeQuery function.
 
-	require("rql/js-array").executeQuery("foo=3&price=lt=10", {}, data)...
+## General Things
 
-The | operator can be used to indicate an "or" operation. We can also use paranthesis
-to group expressions. For example:
+Spaces between parameters are treated as values.
 
-    (foo=3|foo=bar)&price=lt=10
+	"eq(firstName,Jimbo)" will search for "Jimbo"
+	"eq(firstName, Jimbo)" will search for " Jimbo"
 
-Which is the same as:
+If a query requires an array of values as a parameter, the array is constructed with round brackets and comma delimiters.
 
-    and(or(eq(foo,3),eq(foo,bar)),lt(price,10))
+	"in(colour,(red,purple,orange))"
 
-Values in queries can be strings (using URL encoding), numbers, booleans, null, undefined,
-and dates (in ISO UTC format without colon encoding). We can also denote arrays
-with paranthesis enclosed, comma separated values. For example to find the objects
-where foo can be the number 3, the string bar, the boolean true, or the date for the
-first day of the century we could write an array with the "in" operator:
+To drill into nested JSON object properties, supply an array of property names instead of a single property name.
 
-    foo=in=(3,bar,true,2000-01-01T00:00:00Z)
+	"eq((car,colour),green)" will inspect colour property in a data array like this: [{name: "Jimbo", car: {make: "Dodge", colour: "green"}}]
+	
+Alternately, arrays can be specified with a slash notation.
 
-We can also explicitly specify primitive types in queries. To explicitly specify a string "3",
-we can do:
+	"in(colour,red/purple/orange)"
+	"eq(car/colour,green)"
+	
+To target the objects in the data array instead of a property of them, leave the property value blank.
 
-    foo=string:3
+	"eq(,Jimbo)" is appropriate for a data array like this: ["Danbo", "Jimbo", "Hambo"]
 
-Any property can be nested by using an array of properties. To search by the bar property of
-the object in the foo property we can do:
+Functions can be chained together with commas. This is particularly useful to apply a function that affects the entire array after you have filtered the array.
 
-    (foo,bar)=3
+	"eq(firstName,Jimbo),sort(+lastName),select(firstName,lastName,age)"
+	
+For boolean values, use lower case constants to define true or false
 
-We can also use slashes as shorthand for arrays, so we could equivalently write the nested
-query:
+	"eq(inSchool,true)"
 
-    foo/bar=3
+Primitive data types can be specified in the query by putting the type before the value, followed by a colon.  
 
-Another common operator is sort. We can use the sort operator to sort by a specified property.
-To sort by foo in ascending order:
+	"eq(id,string:5)" will search for the string "5", not the integer 5
 
-	price=lt=10&sort(+foo)
+## Functions That Filter
 
-We can also do multiple property sorts. To sort by price in ascending order and rating in descending order:
+### eq
 
-    sort(+price,-rating)
+Filters objects where the value of the given property is equal to the given value.  Usage: eq(&lt;property>,&lt;value>) 
+	
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Jimbo", age: 37},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 44}
+	];
+	query = "eq(name,Jimbo)";
+	result = [		
+		{name: "Jimbo", age: 37},
+		{name: "Jimbo", age: 44}
+	];
+	
+Alternate forms
 
-The aggregate function can be used for aggregation. To calculate the sum of sales for
-each department:
+	"name=Jimbo"
+	"name==Jimbo"
+	"name=eq=Jimbo"
 
-    aggregate(departmentId,sum(sales))
 
-Here is a definition of the common operators (individual stores may have support
-for more less operators):
+### ne
 
-* sort(&lt;+|->&lt;property) - Sorts by the given property in order specified by the prefix (+ for ascending, - for descending)
-* select(&lt;property>,&lt;property>,...) - Trims each object down to the set of properties defined in the arguments
-* values(&lt;property>) - Returns an array of the given property value for each object
-* aggregate(&lt;property|function>,...) - Aggregates the array, grouping by objects that are distinct for the provided properties, and then reduces the remaining other property values using the provided functions
-* distinct() - Returns a result set with duplicates removed
-* in(&lt;property>,&lt;array-of-values>) - Filters for objects where the specified property's value is in the provided array
-* out(&lt;property>,&lt;array-of-values>) - Filters for objects where the specified property's value is not in the provided array
-* contains(&lt;property>,&lt;value | expression>) - Filters for objects where the specified property's value is an array and the array contains any value that equals the provided value or satisfies the provided expression.
-* excludes(&lt;property>,&lt;value | expression>) - Filters for objects where the specified property's value is an array and the array does not contain any of value that equals the provided value or satisfies the provided expression.
-* limit(count,start,maxCount) - Returns the given range of objects from the result set
-* and(&lt;query>,&lt;query>,...) - Applies all the given queries
-* or(&lt;query>,&lt;query>,...) - The union of the given queries
-* eq(&lt;property>,&lt;value>) - Filters for objects where the specified property's value is equal to the provided value
-* lt(&lt;property>,&lt;value>) - Filters for objects where the specified property's value is less than the provided value
-* le(&lt;property>,&lt;value>) - Filters for objects where the specified property's value is less than or equal to the provided value
-* gt(&lt;property>,&lt;value>) - Filters for objects where the specified property's value is greater than the provided value
-* ge(&lt;property>,&lt;value>) - Filters for objects where the specified property's value is greater than or equal to the provided value
-* ne(&lt;property>,&lt;value>) - Filters for objects where the specified property's value is not equal to the provided value
-* rel(&lt;relation name?>,&lt;query>) - Applies the provided query against the linked data of the provided relation name.
-* sum(&lt;property?>) - Finds the sum of every value in the array or if the property argument is provided, returns the sum of the value of property for every object in the array
-* mean(&lt;property?>) - Finds the mean of every value in the array or if the property argument is provided, returns the mean of the value of property for every object in the array
-* max(&lt;property?>) - Finds the maximum of every value in the array or if the property argument is provided, returns the maximum of the value of property for every object in the array
-* min(&lt;property?>) - Finds the minimum of every value in the array or if the property argument is provided, returns the minimum of the value of property for every object in the array
-* recurse(&lt;property?>) - Recursively searches, looking in children of the object as objects in arrays in the given property value
-* first() - Returns the first record of the query's result set
-* one() - Returns the first and only record of the query's result set, or produces an error if the query's result set has more or less than one record in it.
-* count() - Returns the count of the number of records in the query's result set
+Filters objects where the value of the given property is not equal to the given value.  Usage: ne(&lt;property>,&lt;value>) 
+	
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Jimbo", age: 37},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 44}
+	];
+	query = "ne(name,Jimbo)";
+	result = [		
+		{name: "Danbo", age: 25},		
+		{name: "Hambo", age: 40}
+	];
+	
+Alternate forms
 
-# JavaScript Modules
+	"name!=Jimbo"
+	"name=ne=Jimbo"
+	
+### le
 
-## rql/query
+Filters objects where the value of the given property is less than or equal to the given value.  Usage: le(&lt;property>,&lt;value>) 
+	
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Jimbo", age: 37},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 44}
+	];
+	query = "le(age,40)";
+	result = [		
+		{name: "Danbo", age: 25},
+		{name: "Jimbo", age: 37},
+		{name: "Hambo", age: 40}
+	];
+	
 
-    var newQuery = require("rql/query").Query();
+	query = "le(name,I)";
+	result = [		
+		{name: "Danbo", age: 25},		
+		{name: "Hambo", age: 40}
+	];
+	
+	
+Alternate forms
 
-This module allows us to construct queries. With the query object, we could execute
-RQL operators as methods against the query object. For example:
+	"age<=40"
+	"age=le=40"
 
-    var Query = require("rql/query").Query;
-    var fooBetween3And10Query = new Query().lt("foo",3).gt("foo",10);
 
-## rql/parser
+### ge
 
-	var parsedQueryObject = require("rql/parser").parseQuery(rqlString);
+Filters objects where the value of the given property is greater than or equal to the given value.  Usage: ge(&lt;property>,&lt;value>) 
+	
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Jimbo", age: 37},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 44}
+	];
+	query = "ge(age,40)";
+	result = [		
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 44}
+	];
+	
 
-If you are writing an implementation of RQL for a database or other storage endpoint, or want to introspect queries, you can use the parsed query data
-structures. You can parse string queries with parser module's parseQuery function.
-Query objects have a "name" property and an "args" with an array of the arguments.
-For example:
+	query = "ge(name,J)";
+	result = [		
+		{name: "Jimbo", age: 37},
+		{name: "Jimbo", age: 44}
+	];
+	
+	
+Alternate forms
 
-	require("rql/parser").parseQuery("(foo=3|foo=bar)&price=lt=10") ->
-	{
-		name: "and",
-		args: [
-			{
-				name:"or",
-				args:[
-					{
-						name:"eq",
-						args:["foo",3]
-					},
-					{
-						name:"eq",
-						args:["foo","bar"]
-					}
-				]
-			},
-			{
-				name:"lt",
-				args:["price",10]
-			}
+	"age>=25"
+	"age=ge=25"
+
+
+### lt
+
+Filters objects where the value of the given property is less than the given value.  Usage: lt(&lt;property>,&lt;value>) 
+	
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Jimbo", age: 37},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 44}
+	];
+	query = "lt(age,40)";
+	result = [		
+		{name: "Danbo", age: 25},
+		{name: "Jimbo", age: 37}
+	];
+	
+
+	query = "lt(name,J)";
+	result = [		
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40}
+	];
+		
+	
+Alternate forms
+
+	"age<35"
+	"age=lt=35"
+
+
+### gt
+
+Filters objects where the value of the given property is greater than the given value.  Usage: gt(&lt;property>,&lt;value>) 
+	
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Jimbo", age: 37},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 44}
+	];
+	query = "gt(age,40)";
+	result = [		
+		{name: "Jimbo", age: 44}
+	];
+	
+
+	query = "gt(name,J)";
+	result = [		
+		{name: "Jimbo", age: 37},
+		{name: "Jimbo", age: 44}
+	];	
+	
+Alternate forms
+
+	"age>42"
+	"age=gt=42"
+
+
+### match
+
+Filters objects where the value of the given property satisfies the given regex pattern, with case insensitivity turned on.  Usage: match(&lt;property>,&lt;regex>) 
+
+	data = [
+		{name: "danbo", age: 25},
+		{name: "Mc ron dougal", age: 37},
+		{name: "Hambo", age: 40},
+		{name: "Mc Daniel", age: 44}
+	];
+	query = "match(name,da)";
+	result = [		
+		{name: "danbo", age: 25},				
+		{name: "Mc Daniel", age: 44}
+	];
+	
+
+	query = "match(name,mc*d)";
+	result = [		
+		{name: "Mc ron dougal", age: 37},	
+		{name: "Mc Daniel", age: 44}
+	];	
+
+
+### matchcase
+
+Filters objects where the value of the given property satisfies the given regex pattern, with case sensitivity turned on.  Usage: matchcase(&lt;property>,&lt;regex>) 
+
+	data = [
+		{name: "danbo", age: 25},
+		{name: "Mc ron dougal", age: 37},
+		{name: "Hambo", age: 40},
+		{name: "Mc Daniel", age: 44}
+	];
+	query = "matchcase(name,Da)";
+	result = [							
+		{name: "Mc Daniel", age: 44}
+	];
+	
+
+	query = "matchcase(name,Mc*D)";
+	result = [					
+		{name: "Mc Daniel", age: 44}
+	];	
+
+
+### in
+
+Filters objects where the value of the given property is equal to one of the values in the given array of values.  Usage: in(&lt;property>,&lt;array-of-values>)
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Jimbo", age: 37},
+		{name: "Hambo", age: 40},
+		{name: "Daniel", age: 44}
+	];
+	query = "in(name,(Dan,Daniel,Danbo))";
+	result = [							
+		{name: "Danbo", age: 25},
+		{name: "Daniel", age: 44}
+	];
+	
+
+
+### out
+
+Filters objects where the value of the given property is not equal to any of the values in the given array of values.  Usage: out(&lt;property>,&lt;array-of-values>)
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Jimbo", age: 37},
+		{name: "Hambo", age: 40},
+		{name: "Daniel", age: 44}
+	];
+	query = "out(name,(Dan,Daniel,Danbo))";
+	result = [							
+		{name: "Jimbo", age: 37},
+		{name: "Hambo", age: 40}
+	];
+	
+
+### contains
+
+Filters objects where the value of the given property is an array, and that array has an element that equals the given value or satisfies the given expression.  Usage:  contains(&lt;property>,&lt;value | expression>) 
+
+	//using value match
+	data = [
+		{
+			order: "00235",
+			toppings: ["mushroom", "green pepper", "bacon"]
+		},
+		{
+			order: "00236",
+			toppings: ["mushroom", "tomato", "onion"]
+		}
+	];
+	query = "contains(toppings,onion)";
+	result = [		
+		{
+			order: "00236",
+			toppings: ["mushroom", "tomato", "onion"]
+		}
+	];
+
+	//using expression match
+	data = [
+		{
+			order: "00235",
+			toppings: [
+				{name: "mushroom", quantity: 1},
+				{name: "green pepper", quantity: 1},
+				{name: "bacon",	quantity: 2}	
+			]
+		},
+		{
+			order: "00236",
+			toppings: [
+				{name: "mushroom", quantity: 1},
+				{name: "tomato", quantity: 1},
+				{name: "onion",	quantity: 0.5}	
+			]
+		}
+	];
+	query = "contains(toppings,eq(name,bacon))";
+	result = [		
+		{
+			order: "00235",
+			toppings: [
+				{name: "mushroom", quantity: 1},
+				{name: "green pepper", quantity: 1},
+				{name: "bacon",	quantity: 2}	
+			]
+		}
+	];
+
+### excludes
+
+Filters objects where the value of the given property is an array, and that array has no elements that equal the given value or satisfies the given expression.  Usage:  excludes(&lt;property>,&lt;value | expression>) 
+
+	//using value match
+	data = [
+		{
+			order: "00235",
+			toppings: ["mushroom", "green pepper", "bacon"]
+		},
+		{
+			order: "00236",
+			toppings: ["mushroom", "tomato", "onion"]
+		}
+	];
+	query = "excludes(toppings,bacon)";
+	result = [		
+		{
+			order: "00236",
+			toppings: ["mushroom", "tomato", "onion"]
+		}
+	];
+
+	//using expression match
+	data = [
+		{
+			order: "00235",
+			toppings: [
+				{name: "mushroom", quantity: 1},
+				{name: "green pepper", quantity: 1},
+				{name: "bacon",	quantity: 2}	
+			]
+		},
+		{
+			order: "00236",
+			toppings: [
+				{name: "mushroom", quantity: 1},
+				{name: "tomato", quantity: 1},
+				{name: "onion",	quantity: 0.5}	
+			]
+		}
+	];
+	query = "excludes(toppings,eq(name,onion))";
+	result = [		
+		{
+			order: "00235",
+			toppings: [
+				{name: "mushroom", quantity: 1},
+				{name: "green pepper", quantity: 1},
+				{name: "bacon",	quantity: 2}	
+			]
+		}
+	];
+
+
+### between
+
+Filters objects where the value of the given property is within the given range. The range is inclusive on the lower bound, and exclusive on the upper bound.  Usage:between(&lt;property>,&lt;range-of-values>,...)
+
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 44},
+		{name: "Aunt Punchy", age: 37},
+		{name: "Uncle Shouty", age: 17}
+	];
+	query = "between(age,(25,44))";
+	result = [		
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},	
+		{name: "Aunt Punchy", age: 37}
+	];
+	
+	query = "between(name,(H,M))";
+	result = [				
+		{name: "Hambo", age: 40},	
+		{name: "Jimbo", age: 44}
+	];
+	
+
+### and
+
+Performs a logical AND on two or more queries.  Usage: and(&lt;query>,&lt;query>,...) 
+
+	data = [
+		{name: "Danbo", age: 25, salary: 23000, gender: "male"},
+		{name: "Hambo", age: 40, salary: 35000, gender: "female"},
+		{name: "Jimbo", age: 40, salary: 38000, gender: "male"},
+		{name: "Jenbo", age: 22, salary: 21000, gender: "female"},
+		{name: "Aunt Punchy", age: 40, salary: 52000, gender: "female"}
+	];
+	query = "and(eq(gender,female),lt(salary,50000),match(name,j))";
+	result = [				
+		{name: "Jenbo", age: 22, salary: 21000, gender: "female"}
+	];
+
+Alternate form
+	
+	"eq(gender,female)&lt(salary,50000)&match(name,j)"
+
+### or
+
+Performs a logical OR on two or more queries.  Usage: or(&lt;query>,&lt;query>,...) 
+
+	data = [
+		{name: "Danbo", age: 25, salary: 23000, gender: "male"},
+		{name: "Hambo", age: 30, salary: 35000, gender: "female"},
+		{name: "Jimbo", age: 40, salary: 38000, gender: "male"},
+		{name: "Jenbo", age: 22, salary: 21000, gender: "female"},
+		{name: "Aunt Punchy", age: 40, salary: 52000, gender: "female"}
+	];
+	query = "or(eq(age,40),gt(salary,50000),match(name,h))";
+	result = [						
+		{name: "Hambo", age: 30, salary: 35000, gender: "female"},
+		{name: "Jimbo", age: 40, salary: 38000, gender: "male"},		
+		{name: "Aunt Punchy", age: 40, salary: 52000, gender: "female"}
+	];
+
+Alternate form (gets cranky when brackets are introduced to the query string)
+
+	"firstName=John|firstName=Johnny|firstName=Jon"
+
+
+## Functions That Change The Result Array
+
+### sort
+
+Will sort the array based on the given properties. The leading + or - dictates the order of the sort.  Usage: sort(&lt;+|->&lt;property,...)
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 17}
+	];
+	query = "lt(age,30),sort(-name)";
+	result = [		
+		{name: "Jimbo", age: 17},
+		{name: "Danbo", age: 25}
+	];
+
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 40}
+	];
+	query = "sort(-age,+name)";
+	result = [				
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 40},
+		{name: "Danbo", age: 25}
+	];
+
+
+### select
+
+Will return the array objects containing only the given properties.  Usage: select(&lt;property>,&lt;property>,...) 
+
+	data = [
+		{name: "Danbo", age: 25, mood: "feisty"},
+		{name: "Hambo", age: 40, mood: "serene"},
+		{name: "Jimbo", age: 17, mood: "hyper"}
+	];
+	query = "lt(age,30),select(name,mood)";
+	result = [		
+		{name: "Danbo", mood: "feisty"},		
+		{name: "Jimbo", mood: "hyper"}
+	];
+
+### unselect
+
+Will return the array objects with the given properties removed.  Usage: unselect(&lt;property>,&lt;property>,...) 
+
+	data = [
+		{name: "Danbo", age: 25, mood: "feisty"},
+		{name: "Hambo", age: 40, mood: "serene"},
+		{name: "Jimbo", age: 17, mood: "hyper"}
+	];
+	query = "lt(age,30),unselect(age)";
+	result = [		
+		{name: "Danbo", mood: "feisty"},		
+		{name: "Jimbo", mood: "hyper"}
+	];
+
+### values
+
+Will return an array of values for a given property.  If multiple properties are given, will return nested arrays of values for each data item.  Usage:values(&lt;property>,&lt;property>,...)
+
+	//single property
+	data = [
+		{name: "Danbo", age: 25, mood: "feisty"},
+		{name: "Hambo", age: 40, mood: "serene"},
+		{name: "Jimbo", age: 17, mood: "hyper"}
+	];
+	query = "lt(age,30),values(name)";
+	result = ["Danbo", "Jimbo"];
+
+	//multiple properties
+	data = [
+		{name: "Danbo", age: 25, mood: "feisty"},
+		{name: "Hambo", age: 40, mood: "serene"},
+		{name: "Jimbo", age: 17, mood: "hyper"}
+	];
+	query = "lt(age,30),values(name,mood)";
+	result = [
+		["Danbo", "feisty"],		
+		["Jimbo", "hyper"]
+	];
+
+
+### limit
+
+Will return a range of the data array.  First parameter is the number of items in the range. Second parameter is zero-based index where the range begins.  Usage: limit(count,start)
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 44},
+		{name: "Aunt Punchy", age: 37},
+		{name: "Uncle Shouty", age: 17}
+	];
+	query = "le(age,40),limit(2,1)";
+	result = [		
+		{name: "Hambo", age: 40},
+		{name: "Aunt Punchy", age: 37}
+	];
+
+The source code and original doc has a third parameter, maxCount.  
+If supplied, it appears adds extra properties to the intermediate result (.start, .end, .totalCount), but nothing seems to use those values for anything
+
+
+### distinct
+
+Will return a list of unique values from the data array. Works only on simple value types.  Identical objects will be treated as different.  Usage: distinct()
+
+	//against values
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Hambo", age: 44}
+	];
+	query = "values(name),distinct()";
+	result = [		
+		"Danbo",
+		"Hambo"
+	];
+
+	//disappointing object comparison
+	data = [		
+		{name: "Hambo", age: 40},
+		{name: "Hambo", age: 40}
+	];
+	query = "distinct()";
+	result = [		
+		{name: "Hambo", age: 40},
+		{name: "Hambo", age: 40}
+	];
+
+
+### recurse
+
+Will take any arrays that belong to the given property and insert those array values into the main array.  Will recurse into nested arrays.  Usage: recurse(&lt;property?>)
+
+	//property example
+	data = [		
+		{
+			name: "Jimbo", 
+		 	orders: [{id: 25}, {id: 40}]
+		},
+		{
+			name: "Danbo",
+			orders: [{id: 19}]
+		}
+	];
+	query = "recurse(orders)";
+	result = [		
+		{
+			name: "Jimbo", 
+		 	orders: [{id: 25}, {id: 40}]
+		},
+		{id: 25}, 
+		{id: 40},
+		{
+			name: "Danbo",
+			orders: [{id: 19}]
+		},
+		{id: 19}
+	];
+
+	//top level example with nested arrays
+	data = [		
+		[1, 2, 3],
+		[
+			[4, 5],
+			[6, 7]
 		]
-	}
+	];
+	query = "recurse()";
+	result = [1, 2, 3, 4, 5, 6, 7];
+	
 
-Installation
-========
+## Functions That Aggregate The Result Array
 
-RQL can be installed using any standard package manager, for example with NPM:
+### sum
 
-    npm install rql
+Returns the sum of the values in the data array. If a property is provided, sums on the value of the property.  Values must be numeric. Usage: sum(&lt;property?>)
 
-or CPM:
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 17}
+	];
+	query = "sum(age)";
+	result = 82;
 
-    cpm install rql
+	data = [5, 8, 13, 21];
+	query = "sum()";
+	result = 47;
 
-or RingoJS:
 
-    ringo-admin install persvr/rql
+### mean
+
+Causes RQL to get angry.  Just kidding, y'all.  Returns the mean average of the values in the data array. If a property is provided, averages on the value of the property.  Values must be numeric. Usage: mean(&lt;property?>)
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 17}
+	];
+	query = "mean(age)";
+	result = 27.33333333333333;
+
+	data = [5, 8, 13, 21];
+	query = "mean()";
+	result = 11.75;
+
+
+### max
+
+Returns the maximum of the values in the data array. If a property is provided, returns the maximum value of the property.  Values must be numeric. Usage: max(&lt;property?>)
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 17}
+	];
+	query = "max(age)";
+	result = 40;
+
+	data = [5, 8, 13, 21];
+	query = "max()";
+	result = 21;
+	
+	
+### min
+
+Returns the minimum of the values in the data array. If a property is provided, returns the minimum value of the property.  Values must be numeric. Usage: min(&lt;property?>)
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 17}
+	];
+	query = "min(age)";
+	result = 17;
+
+	data = [5, 8, 13, 21];
+	query = "min()";
+	result = 5;
+
+
+### min
+
+Returns the minimum of the values in the data array. If a property is provided, returns the minimum value of the property.  Values must be numeric. Usage: min(&lt;property?>)
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 17}
+	];
+	query = "min(age)";
+	result = 17;
+
+	data = [5, 8, 13, 21];
+	query = "min()";
+	result = 5;
+
+
+### count
+
+Returns the number of values in the data array. Usage: count()
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 17}
+	];
+	query = "count()";
+	result = 3;
+
+	query = "lt(age,40),count()";
+	result = 2;
+
+
+### first
+
+Returns the first value in the data array. Usage: first()
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 37}
+	];
+	query = "gt(age,30),first()";
+	result = {name: "Hambo", age: 40};
+
+
+### one
+
+Returns the first and only value in the data array. If array has more than one value, an error is thrown. Usage: one()
+
+	data = [
+		{name: "Danbo", age: 25},
+		{name: "Hambo", age: 40},
+		{name: "Jimbo", age: 17}
+	];
+	query = "gt(age,30),first()";
+	result = {name: "Hambo", age: 40};
+
+	query = "gt(age,20),first()";
+	result = ERROR!!!!;
+
+
+### aggregate
+
+Returns the result of an aggregation on the dataset. Allows you to group by values, and apply aggregate functions on the data in those groups. 
+Takes an arbitrary list of properties and aggregate functions. Will return an array of objects for each grouping. 
+Each object will contain the specific values of the grouping, and the result of the aggregate functions for that grouping.
+Function results are stored in properties with integer numbers as names, corresponding to the order the functions were supplied in the query. 
+Usage: aggregate(&lt;property|function>,...)
+
+	data = [
+		{name: "Danbo", age: 25, salary: 23000, gender: "male"},
+		{name: "Hambo", age: 40, salary: 35000, gender: "female"},
+		{name: "Jimbo", age: 40, salary: 38000, gender: "male"},
+		{name: "Aunt Punchy", age: 40, salary: 52000, gender: "female"}
+	];
+	
+	//average salary grouped by age
+	query = "aggregate(age,mean(salary))";
+	result = [
+		{age: 25, "0": 23000}, 
+		{age: 40, "0": 41666.6666666}
+	];
+
+	//average salary grouped by age and gender, with count of group membership
+	query = "aggregate(age,gender,mean(salary),count())";
+	result = [
+		{age: 25, gender: "male", "0": 23000, "1": 1}, 
+		{age: 40, gender: "female", "0": 43500, "1": 2},
+		{age: 40, gender: "male", "0": 38000, "1": 1}
+	];
+
+	//maximum salary of people older than 30, grouped by gender
+	query = "gt(age,30),aggregate(gender,max(salary))";
+	result = [
+		{gender: "male", "0": 38000}, 
+		{gender: "female", "0": 52000}
+	];
+
+
+## Array Query Options
+
+The middle parameter of RqlArray().executeQuery(,,) is an options object.  Usually it is just an empty object.  However, there are two properties that may be added for additional functionalities.
+
+### Operators
+
+The operators property is set to an object with additional functions defined on it.  These functions are injected into the RQL function engine and can be used in a query. 
+
+	var ra = new RqlArray(),
+        data = [{name: "Danbo", age: 25}, {name: "Jimbo", age: 45}, {name: "Hambo", age: 31}],
+        query = "last()",
+		options = {
+            operators: {
+                last: function () {
+                    return this[this.length -1];
+                }  
+            }
+        };
+	    result;
+	result = ra.executeQuery(query, options, data);
+	
+	//the contents of result would be {name: "Hambo", age: 31}
+
+
+### Parameters
+
+The parameters property is set to an array of values.  These values will be substituted into any $# placeholders in the query string.
+
+	var ra = new RqlArray(),
+        data = [{name: "Danbo", age: 25}, {name: "Jimbo", age: 45}, {name: "Hambo", age: 31}],
+        query = "or(eq(name,$1),gt(age,$2))",
+		options = {
+            parameters: ["Danbo", 36]            
+        };
+	    result;
+	result = ra.executeQuery(query, options, data);
+	
+	//the contents of result would be [{name: "Danbo", age: 25}, {name: "Jimbo", age: 45}]
 
 
 Licensing
 --------
 
-The RQL implementation is part of the Persevere project, and therefore is licensed under the
-AFL or BSD license. The Persevere project is administered under the Dojo foundation,
-and all contributions require a Dojo CLA.
+TODO review by aly
 
-Project Links
-------------
+This code was "borrowed" from RQL, which is licensed under the AFL or BSD license as part of the [Persevere](https://github.com/persvr) project.
 
-See the main Persevere project for more information:
 
-### Homepage:
 
-* [http://persvr.org/](http://persvr.org/)
-
-### Mailing list:
-
-* [http://groups.google.com/group/json-query](http://groups.google.com/group/json-query)
-
-### IRC:
-
-* [\#persevere on irc.freenode.net](http://webchat.freenode.net/?channels=persevere)
