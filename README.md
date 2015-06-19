@@ -16,7 +16,8 @@ The library adds three objects to the global namespace
 	RqlParser
 	
 For the most part, only RqlArray is needed (the other two classes support the internals of RqlArray, though you can use them for custom trickery).  
-A simple example that filters an array for objects whos age property is less than 40:
+
+A simple example that filters an array for objects where the age property is less than 40:
 
 	var ra = new RqlArray(),
         data = [{name: "Danbo", age: 25}, {name: "Jimbo", age: 45}, {name: "Hambo", age: 31}],
@@ -32,7 +33,7 @@ The conversion testing primarily focused on using string-based functional querie
 
 	"and(eq(name,Jimbo),gt(age,24))"
 
-URL type queries also seem to be working but have not been thoroughly tested.  There are issues with or and brackets, though these also exist in the original RQL library  E.g.
+URL type queries also seem to be working but have not been thoroughly tested.  There are issues with OR and brackets, though these also exist in the original RQL library.  E.g.
 
 	"name=Jimbo&age=gt=24"
 	"(name=Jimbo&age>24)|(name=Hambo&age<43)"  //this query usually throws an error
@@ -42,9 +43,7 @@ Inline chained queries was not tested and is quite possibly broken due to the re
 	var fooBetween3And10Query = new RqlQuery().lt("foo",3).gt("foo",10);
 	
 
-String-based functional queries are what will be used by the RAMP project, and is recommended to anyone else using this implementaiton.  
-Of course, fixes to the other formats are always welcome via a pull request.
-
+String-based functional queries are what will be used by the RAMP project, and is recommended to anyone else using this implementaiton.  Of course, fixes to the other formats are always welcome via a pull request.
 
 
 # Examples
@@ -53,7 +52,7 @@ Here are some fun examples of how to apply query functions in RQL.  Examples wil
 
 	data = [<some objects>];
 	query = "<a query string>";
-	result = [<objects from data that satisfy the query>];   
+	result = <result from the executeQuery function>;   
 
 The equality after the result variable is just for readability.  In actual code, the result would be set by calling the executeQuery function.
 
@@ -61,8 +60,8 @@ The equality after the result variable is just for readability.  In actual code,
 
 Spaces between parameters are treated as values.
 
-	"eq(firstName,Jimbo)" will search for "Jimbo"
-	"eq(firstName, Jimbo)" will search for " Jimbo"
+	"eq(firstName,Jimbo)" will match against "Jimbo"
+	"eq(firstName, Jimbo)" will match against " Jimbo"
 
 If a query requires an array of values as a parameter, the array is constructed with round brackets and comma delimiters.
 
@@ -70,7 +69,9 @@ If a query requires an array of values as a parameter, the array is constructed 
 
 To drill into nested JSON object properties, supply an array of property names instead of a single property name.
 
-	"eq((car,colour),green)" will inspect colour property in a data array like this: [{name: "Jimbo", car: {make: "Dodge", colour: "green"}}]
+	"eq((car,colour),green)" 
+	will inspect the colour property in a data array like 
+	[{name: "Jimbo", car: {make: "Dodge", colour: "green"}}]
 	
 Alternately, arrays can be specified with a slash notation.
 
@@ -97,7 +98,8 @@ Primitive data types can be specified in the query by putting the type before th
 
 ### eq
 
-Filters objects where the value of the given property is equal to the given value.  Usage: eq(&lt;property>,&lt;value>) 
+Filters objects where the value of the given property is equal to the given value.  
+**Usage:** eq(&lt;property>,&lt;value>) 
 	
 	data = [
 		{name: "Danbo", age: 25},
@@ -120,7 +122,8 @@ Alternate forms
 
 ### ne
 
-Filters objects where the value of the given property is not equal to the given value.  Usage: ne(&lt;property>,&lt;value>) 
+Filters objects where the value of the given property is not equal to the given value.  
+**Usage:** ne(&lt;property>,&lt;value>) 
 	
 	data = [
 		{name: "Danbo", age: 25},
@@ -141,7 +144,8 @@ Alternate forms
 	
 ### le
 
-Filters objects where the value of the given property is less than or equal to the given value.  Usage: le(&lt;property>,&lt;value>) 
+Filters objects where the value of the given property is less than or equal to the given value.  
+**Usage:** le(&lt;property>,&lt;value>) 
 	
 	data = [
 		{name: "Danbo", age: 25},
@@ -172,7 +176,8 @@ Alternate forms
 
 ### ge
 
-Filters objects where the value of the given property is greater than or equal to the given value.  Usage: ge(&lt;property>,&lt;value>) 
+Filters objects where the value of the given property is greater than or equal to the given value.  
+**Usage:** ge(&lt;property>,&lt;value>) 
 	
 	data = [
 		{name: "Danbo", age: 25},
@@ -202,7 +207,8 @@ Alternate forms
 
 ### lt
 
-Filters objects where the value of the given property is less than the given value.  Usage: lt(&lt;property>,&lt;value>) 
+Filters objects where the value of the given property is less than the given value.  
+**Usage:** lt(&lt;property>,&lt;value>) 
 	
 	data = [
 		{name: "Danbo", age: 25},
@@ -232,7 +238,8 @@ Alternate forms
 
 ### gt
 
-Filters objects where the value of the given property is greater than the given value.  Usage: gt(&lt;property>,&lt;value>) 
+Filters objects where the value of the given property is greater than the given value.  
+**Usage:** gt(&lt;property>,&lt;value>) 
 	
 	data = [
 		{name: "Danbo", age: 25},
@@ -260,7 +267,8 @@ Alternate forms
 
 ### match
 
-Filters objects where the value of the given property satisfies the given regex pattern, with case insensitivity turned on.  Usage: match(&lt;property>,&lt;regex>) 
+Filters objects where the value of the given property satisfies the given regex pattern, with case insensitivity turned on.  
+**Usage:** match(&lt;property>,&lt;regex>) 
 
 	data = [
 		{name: "danbo", age: 25},
@@ -284,7 +292,8 @@ Filters objects where the value of the given property satisfies the given regex 
 
 ### matchcase
 
-Filters objects where the value of the given property satisfies the given regex pattern, with case sensitivity turned on.  Usage: matchcase(&lt;property>,&lt;regex>) 
+Filters objects where the value of the given property satisfies the given regex pattern, with case sensitivity turned on.  
+**Usage:** matchcase(&lt;property>,&lt;regex>) 
 
 	data = [
 		{name: "danbo", age: 25},
@@ -292,9 +301,9 @@ Filters objects where the value of the given property satisfies the given regex 
 		{name: "Hambo", age: 40},
 		{name: "Mc Daniel", age: 44}
 	];
-	query = "matchcase(name,Da)";
+	query = "matchcase(name,da)";
 	result = [							
-		{name: "Mc Daniel", age: 44}
+		{name: "danbo", age: 25}
 	];
 	
 
@@ -306,7 +315,8 @@ Filters objects where the value of the given property satisfies the given regex 
 
 ### in
 
-Filters objects where the value of the given property is equal to one of the values in the given array of values.  Usage: in(&lt;property>,&lt;array-of-values>)
+Filters objects where the value of the given property is equal to one of the values in the given array of values.  
+**Usage:** in(&lt;property>,&lt;array-of-values>)
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -324,7 +334,8 @@ Filters objects where the value of the given property is equal to one of the val
 
 ### out
 
-Filters objects where the value of the given property is not equal to any of the values in the given array of values.  Usage: out(&lt;property>,&lt;array-of-values>)
+Filters objects where the value of the given property is not equal to any of the values in the given array of values.  
+**Usage:** out(&lt;property>,&lt;array-of-values>)
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -341,7 +352,8 @@ Filters objects where the value of the given property is not equal to any of the
 
 ### contains
 
-Filters objects where the value of the given property is an array, and that array has an element that equals the given value or satisfies the given expression.  Usage:  contains(&lt;property>,&lt;value | expression>) 
+Filters objects where the value of the given property is an array, and that array has an element that equals the given value or satisfies the given expression.  
+**Usage:** contains(&lt;property>,&lt;value | expression>) 
 
 	//using value match
 	data = [
@@ -361,6 +373,7 @@ Filters objects where the value of the given property is an array, and that arra
 			toppings: ["mushroom", "tomato", "onion"]
 		}
 	];
+
 
 	//using expression match
 	data = [
@@ -395,7 +408,8 @@ Filters objects where the value of the given property is an array, and that arra
 
 ### excludes
 
-Filters objects where the value of the given property is an array, and that array has no elements that equal the given value or satisfies the given expression.  Usage:  excludes(&lt;property>,&lt;value | expression>) 
+Filters objects where the value of the given property is an array, and that array has no elements that equal the given value or satisfies the given expression.  
+**Usage:** excludes(&lt;property>,&lt;value | expression>) 
 
 	//using value match
 	data = [
@@ -415,6 +429,7 @@ Filters objects where the value of the given property is an array, and that arra
 			toppings: ["mushroom", "tomato", "onion"]
 		}
 	];
+
 
 	//using expression match
 	data = [
@@ -450,7 +465,8 @@ Filters objects where the value of the given property is an array, and that arra
 
 ### between
 
-Filters objects where the value of the given property is within the given range. The range is inclusive on the lower bound, and exclusive on the upper bound.  Usage:between(&lt;property>,&lt;range-of-values>,...)
+Filters objects where the value of the given property is within the given range. The range is inclusive on the lower bound, and exclusive on the upper bound.  
+**Usage:** between(&lt;property>,&lt;range-of-values>,...)
 
 
 	data = [
@@ -467,6 +483,7 @@ Filters objects where the value of the given property is within the given range.
 		{name: "Aunt Punchy", age: 37}
 	];
 	
+	
 	query = "between(name,(H,M))";
 	result = [				
 		{name: "Hambo", age: 40},	
@@ -476,7 +493,8 @@ Filters objects where the value of the given property is within the given range.
 
 ### and
 
-Performs a logical AND on two or more queries.  Usage: and(&lt;query>,&lt;query>,...) 
+Performs a logical AND on two or more queries.  
+**Usage:** and(&lt;query>,&lt;query>,...) 
 
 	data = [
 		{name: "Danbo", age: 25, salary: 23000, gender: "male"},
@@ -496,7 +514,8 @@ Alternate form
 
 ### or
 
-Performs a logical OR on two or more queries.  Usage: or(&lt;query>,&lt;query>,...) 
+Performs a logical OR on two or more queries.  
+**Usage:** or(&lt;query>,&lt;query>,...) 
 
 	data = [
 		{name: "Danbo", age: 25, salary: 23000, gender: "male"},
@@ -521,7 +540,8 @@ Alternate form (gets cranky when brackets are introduced to the query string)
 
 ### sort
 
-Will sort the array based on the given properties. The leading + or - dictates the order of the sort.  Usage: sort(&lt;+|->&lt;property,...)
+Will sort the array based on the given properties. The leading + or - dictates the order of the sort.  
+**Usage:** sort(&lt;+|->&lt;property,...)
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -550,7 +570,8 @@ Will sort the array based on the given properties. The leading + or - dictates t
 
 ### select
 
-Will return the array objects containing only the given properties.  Usage: select(&lt;property>,&lt;property>,...) 
+Will return the array objects containing only the given properties.  
+**Usage:** select(&lt;property>,&lt;property>,...) 
 
 	data = [
 		{name: "Danbo", age: 25, mood: "feisty"},
@@ -565,7 +586,8 @@ Will return the array objects containing only the given properties.  Usage: sele
 
 ### unselect
 
-Will return the array objects with the given properties removed.  Usage: unselect(&lt;property>,&lt;property>,...) 
+Will return the array objects with the given properties removed.  
+**Usage:** unselect(&lt;property>,&lt;property>,...) 
 
 	data = [
 		{name: "Danbo", age: 25, mood: "feisty"},
@@ -580,7 +602,8 @@ Will return the array objects with the given properties removed.  Usage: unselec
 
 ### values
 
-Will return an array of values for a given property.  If multiple properties are given, will return nested arrays of values for each data item.  Usage:values(&lt;property>,&lt;property>,...)
+Will return an array of values for a given property.  If multiple properties are given, will return nested arrays of values for each data item.  
+**Usage:**values(&lt;property>,&lt;property>,...)
 
 	//single property
 	data = [
@@ -590,6 +613,7 @@ Will return an array of values for a given property.  If multiple properties are
 	];
 	query = "lt(age,30),values(name)";
 	result = ["Danbo", "Jimbo"];
+
 
 	//multiple properties
 	data = [
@@ -606,7 +630,8 @@ Will return an array of values for a given property.  If multiple properties are
 
 ### limit
 
-Will return a range of the data array.  First parameter is the number of items in the range. Second parameter is zero-based index where the range begins.  Usage: limit(count,start)
+Will return a range of the data array.  First parameter is the number of items in the range. Second parameter is zero-based index where the range begins.  
+**Usage:** limit(count,start)
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -621,13 +646,13 @@ Will return a range of the data array.  First parameter is the number of items i
 		{name: "Aunt Punchy", age: 37}
 	];
 
-The source code and original doc has a third parameter, maxCount.  
-If supplied, it appears adds extra properties to the intermediate result (.start, .end, .totalCount), but nothing seems to use those values for anything
+The source code and original doc has a third parameter, maxCount. If supplied, it appears adds extra properties to the intermediate result (.start, .end, .totalCount), but nothing seems to use those values for anything.
 
 
 ### distinct
 
-Will return a list of unique values from the data array. Works only on simple value types.  Identical objects will be treated as different.  Usage: distinct()
+Will return a list of unique values from the data array. Works only on simple value types.  Identical objects will be treated as different.  
+**Usage:** distinct()
 
 	//against values
 	data = [
@@ -640,6 +665,7 @@ Will return a list of unique values from the data array. Works only on simple va
 		"Danbo",
 		"Hambo"
 	];
+
 
 	//disappointing object comparison
 	data = [		
@@ -655,7 +681,8 @@ Will return a list of unique values from the data array. Works only on simple va
 
 ### recurse
 
-Will take any arrays that belong to the given property and insert those array values into the main array.  Will recurse into nested arrays.  Usage: recurse(&lt;property?>)
+Will take any arrays that belong to the given property and insert those array values into the main array.  Will recurse into nested arrays.  
+**Usage:** recurse(&lt;property?>)
 
 	//property example
 	data = [		
@@ -683,6 +710,7 @@ Will take any arrays that belong to the given property and insert those array va
 		{id: 19}
 	];
 
+
 	//top level example with nested arrays
 	data = [		
 		[1, 2, 3],
@@ -699,7 +727,8 @@ Will take any arrays that belong to the given property and insert those array va
 
 ### sum
 
-Returns the sum of the values in the data array. If a property is provided, sums on the value of the property.  Values must be numeric. Usage: sum(&lt;property?>)
+Returns the sum of the values in the data array. If a property is provided, sums on the value of the property.  Values must be numeric. 
+**Usage:** sum(&lt;property?>)
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -709,6 +738,7 @@ Returns the sum of the values in the data array. If a property is provided, sums
 	query = "sum(age)";
 	result = 82;
 
+
 	data = [5, 8, 13, 21];
 	query = "sum()";
 	result = 47;
@@ -716,7 +746,8 @@ Returns the sum of the values in the data array. If a property is provided, sums
 
 ### mean
 
-Causes RQL to get angry.  Just kidding, y'all.  Returns the mean average of the values in the data array. If a property is provided, averages on the value of the property.  Values must be numeric. Usage: mean(&lt;property?>)
+Causes RQL to get angry.  Just kidding, y'all.  Returns the mean average of the values in the data array. If a property is provided, averages on the value of the property.  Values must be numeric. 
+**Usage:** mean(&lt;property?>)
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -726,6 +757,7 @@ Causes RQL to get angry.  Just kidding, y'all.  Returns the mean average of the 
 	query = "mean(age)";
 	result = 27.33333333333333;
 
+
 	data = [5, 8, 13, 21];
 	query = "mean()";
 	result = 11.75;
@@ -733,7 +765,8 @@ Causes RQL to get angry.  Just kidding, y'all.  Returns the mean average of the 
 
 ### max
 
-Returns the maximum of the values in the data array. If a property is provided, returns the maximum value of the property.  Values must be numeric. Usage: max(&lt;property?>)
+Returns the maximum of the values in the data array. If a property is provided, returns the maximum value of the property.  Values must be numeric. 
+**Usage:** max(&lt;property?>)
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -743,6 +776,7 @@ Returns the maximum of the values in the data array. If a property is provided, 
 	query = "max(age)";
 	result = 40;
 
+
 	data = [5, 8, 13, 21];
 	query = "max()";
 	result = 21;
@@ -750,7 +784,8 @@ Returns the maximum of the values in the data array. If a property is provided, 
 	
 ### min
 
-Returns the minimum of the values in the data array. If a property is provided, returns the minimum value of the property.  Values must be numeric. Usage: min(&lt;property?>)
+Returns the minimum of the values in the data array. If a property is provided, returns the minimum value of the property.  Values must be numeric. 
+**Usage:** min(&lt;property?>)
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -760,22 +795,6 @@ Returns the minimum of the values in the data array. If a property is provided, 
 	query = "min(age)";
 	result = 17;
 
-	data = [5, 8, 13, 21];
-	query = "min()";
-	result = 5;
-
-
-### min
-
-Returns the minimum of the values in the data array. If a property is provided, returns the minimum value of the property.  Values must be numeric. Usage: min(&lt;property?>)
-
-	data = [
-		{name: "Danbo", age: 25},
-		{name: "Hambo", age: 40},
-		{name: "Jimbo", age: 17}
-	];
-	query = "min(age)";
-	result = 17;
 
 	data = [5, 8, 13, 21];
 	query = "min()";
@@ -784,7 +803,8 @@ Returns the minimum of the values in the data array. If a property is provided, 
 
 ### count
 
-Returns the number of values in the data array. Usage: count()
+Returns the number of values in the data array. 
+**Usage:** count()
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -800,7 +820,8 @@ Returns the number of values in the data array. Usage: count()
 
 ### first
 
-Returns the first value in the data array. Usage: first()
+Returns the first value in the data array. 
+**Usage:** first()
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -813,7 +834,8 @@ Returns the first value in the data array. Usage: first()
 
 ### one
 
-Returns the first and only value in the data array. If array has more than one value, an error is thrown. Usage: one()
+Returns the first and only value in the data array. If array has more than one value, an error is thrown. 
+**Usage:** one()
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -829,11 +851,8 @@ Returns the first and only value in the data array. If array has more than one v
 
 ### aggregate
 
-Returns the result of an aggregation on the dataset. Allows you to group by values, and apply aggregate functions on the data in those groups. 
-Takes an arbitrary list of properties and aggregate functions. Will return an array of objects for each grouping. 
-Each object will contain the specific values of the grouping, and the result of the aggregate functions for that grouping.
-Function results are stored in properties with integer numbers as names, corresponding to the order the functions were supplied in the query. 
-Usage: aggregate(&lt;property|function>,...)
+Returns the result of an aggregation on the dataset. Allows you to group by values, and apply aggregate functions on the data in those groups.  Takes an arbitrary list of properties and aggregate functions. Will return an array of objects for each grouping.  Each object will contain the specific values of the grouping, and the result of the aggregate functions for that grouping.  Function results are stored in properties with integer numbers as names, corresponding to the order the functions were supplied in the query. 
+**Usage:** aggregate(&lt;property|function>,...)
 
 	data = [
 		{name: "Danbo", age: 25, salary: 23000, gender: "male"},
