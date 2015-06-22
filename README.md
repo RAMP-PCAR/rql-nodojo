@@ -20,12 +20,12 @@ For the most part, only RqlArray is needed (the other two classes support the in
 A simple example that filters an array for objects where the age property is less than 40:
 
 	var ra = new RqlArray(),
-        data = [{name: "Danbo", age: 25}, {name: "Jimbo", age: 45}, {name: "Hambo", age: 31}],
+        data = [{name: "Danbo", age: 25}, {name: "Jimbo", age: 45}, {name: "Hambo", age: 9}],
         query = "lt(age,40)",
 	    result;
 	result = ra.executeQuery(query, {}, data);
 	
-	//the contents of result would be  [{name: "Danbo", age: 25}, {name: "Hambo", age: 31}]
+	//the contents of result would be  [{name: "Danbo", age: 25}, {name: "Hambo", age: 9}]
 
 # Limitations
 
@@ -928,7 +928,7 @@ The middle parameter of RqlArray().executeQuery(,,) is an options object.  Usual
 The operators property is set to an object with additional functions defined on it.  These functions are injected into the RQL function engine and can be used in a query. 
 
 	var ra = new RqlArray(),
-        data = [{name: "Danbo", age: 25}, {name: "Jimbo", age: 45}, {name: "Hambo", age: 31}],
+        data = [{name: "Danbo", age: 25}, {name: "Jimbo", age: 4}, {name: "Hambo", age: 31}],
         query = "last()",
 		options = {
             operators: {
@@ -948,7 +948,7 @@ The operators property is set to an object with additional functions defined on 
 The parameters property is set to an array of values.  These values will be substituted into any $# placeholders in the query string.
 
 	var ra = new RqlArray(),
-        data = [{name: "Danbo", age: 25}, {name: "Jimbo", age: 45}, {name: "Hambo", age: 31}],
+        data = [{name: "Danbo", age: 25}, {name: "Jimbo", age: 45}, {name: "Hambo", age: 3}],
         query = "or(eq(name,$1),gt(age,$2))",
 		options = {
             parameters: ["Danbo", 36]            
