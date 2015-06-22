@@ -45,6 +45,41 @@ Inline chained queries was not tested and is quite possibly broken due to the re
 
 String-based functional queries are what will be used by the RAMP project, and is recommended to anyone else using this implementaiton.  Of course, fixes to the other formats are always welcome via a pull request.
 
+# Function List
+
+A quick lookup for function names. Detailed examples of each can be found in the Examples section below
+
+* eq(&lt;property>,&lt;value>) - equal to
+* ne(&lt;property>,&lt;value>) - not equal to
+* le(&lt;property>,&lt;value>) - less than or equal to
+* ge(&lt;property>,&lt;value>) - greater than or equal to
+* lt(&lt;property>,&lt;value>) - less than
+* gt(&lt;property>,&lt;value>) - greater than
+* match(&lt;property>,&lt;regex>) - regular expression match, case insensitive
+* matchcase(&lt;property>,&lt;regex>) - regular expression match, case sensitive
+* in(&lt;property>,&lt;array-of-values>) - equal to one of a set of values
+* out(&lt;property>,&lt;array-of-values>) - not equal to any of a set of values
+* contains(&lt;property>,&lt;value | expression>) - array contains a value that satisfies an expression
+* excludes(&lt;property>,&lt;value | expression>) - array does not contain a value that satisfies an expression
+* between(&lt;property>,&lt;range-of-values>,...) - value is within a range
+* and(&lt;query>,&lt;query>,...) - logical and
+* or(&lt;query>,&lt;query>,...) - logical or
+* sort(&lt;+|->&lt;property,...) - sorts array on property values
+* select(&lt;property>,&lt;property>,...) - only includes specific properties in the result set
+* unselect(&lt;property>,&lt;property>,...) - exclude specific properties from the result set
+* values(&lt;property>,&lt;property>,...) - returns array of specific property values
+* limit(count,start) - return a range of the array
+* distinct() - return an array of distinct values
+* recurse(&lt;property?>) - copy values from child arrays into top array
+* sum(&lt;property?>) - sum of values of a property
+* mean(&lt;property?>) - mean average of values of a property
+* max(&lt;property?>) - maximum value of a property
+* min(&lt;property?>) - minimum value of a property
+* count() - number of elements in top array
+* first() - first element in top array
+* one() - first and only element in top array
+* aggregate(&lt;property|function>,...) - perform group-by aggregation
+
 
 # Examples
 
@@ -603,7 +638,7 @@ Will return the array objects with the given properties removed.
 ### values
 
 Will return an array of values for a given property.  If multiple properties are given, will return nested arrays of values for each data item.  
-**Usage:**values(&lt;property>,&lt;property>,...)
+**Usage:** values(&lt;property>,&lt;property>,...)
 
 	//single property
 	data = [
