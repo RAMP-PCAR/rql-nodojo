@@ -575,7 +575,7 @@ Alternate form (gets cranky when brackets are introduced to the query string)
 
 ### sort
 
-Will sort the array based on the given properties. The leading + or - dictates the order of the sort. Cannot currently sort on nested properties.
+Will sort the array based on the given properties. The leading + or - dictates the order of the sort. Cannot currently sort on nested properties.  
 **Usage:** sort(&lt;+|->&lt;property>,...)
 
 	data = [
