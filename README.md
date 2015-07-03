@@ -575,8 +575,8 @@ Alternate form (gets cranky when brackets are introduced to the query string)
 
 ### sort
 
-Will sort the array based on the given properties. The leading + or - dictates the order of the sort.  
-**Usage:** sort(&lt;+|->&lt;property,...)
+Will sort the array based on the given properties. The leading + or - dictates the order of the sort. Cannot currently sort on nested properties.
+**Usage:** sort(&lt;+|->&lt;property>,...)
 
 	data = [
 		{name: "Danbo", age: 25},
@@ -601,7 +601,14 @@ Will sort the array based on the given properties. The leading + or - dictates t
 		{name: "Jimbo", age: 40},
 		{name: "Danbo", age: 25}
 	];
-
+	
+	
+	data = [
+		{person: {name: "Danbo", age: 25}},
+		{person: {name: "Hambo", age: 40}}
+	];
+	query = "sort(+(person,name))";
+	result = FAIL!;
 
 ### select
 
